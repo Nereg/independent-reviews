@@ -1,0 +1,35 @@
+services:
+  pgadmin:
+    image: dpage/pgadmin4:latest
+    restart: always
+    environment:
+      - PGADMIN_DEFAULT_EMAIL=me@me.me
+      - PGADMIN_DEFAULT_PASSWORD_FILE=/configs/dbPassword.secret
+      - PGADMIN_CONFIG_SERVER_MODE=False
+      - PGADMIN_CONFIG_MASTER_PASSWORD_REQUIRED=False
+      - PGADMIN_DISABLE_POSTFIX=true
+    entrypoint: /bin/sh -c "chmod 600 /configs/dbPassword.secret; /entrypoint.sh;"
+    user: root
+    configs:
+      - source: servers.json
+        target: /pgadmin4/servers.json
+    volumes:
+      - ./configs/:/configs/
+    depends_on:
+      - db
+    ports:
+      - 8080:80
+
+configs:
+  servers.json:
+    content: |
+      {"Servers": {"1": {
+        "Group": "Servers",
+        "Name": "My Local Postgres 16.1",
+        "Host": "db",
+        "Port": 5432,
+        "MaintenanceDB": "postgres",
+        "Username": "postgres",
+        "PassFile": "/configs/dbPassword.secret",
+        "SSLMode": "prefer"
+      }}}

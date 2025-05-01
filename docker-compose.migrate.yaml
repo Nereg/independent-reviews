@@ -1,0 +1,18 @@
+services:
+  migrator:
+    image: migrate/migrate
+    volumes:
+      - ./configs:/configs
+      - ./storage/logs:/logs
+      - ./src/db/migrations:/migrations
+    depends_on:
+      db:
+        condition: service_healthy
+    stdin_open: true
+    tty: true
+    # example command, change how needed
+    # command: [ "-path", "/migrations", "-database", "DB_URL_WITH_THE_PASSWORD/?sslmode=disable&dbname=bot_main", "up" ]
+    # command: [ "create", "-ext", "sql", "-dir", "/migrations", "NAME"]
+  bot:
+    entrypoint: [ "echo", "bot disabled while migrating" ]
+    restart: no

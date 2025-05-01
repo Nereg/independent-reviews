@@ -1,0 +1,34 @@
+# use docker compose -f docker-compose.xxx.yaml --profile XXX up to bring up specific configurations
+# use no profile to bring up default production config
+# PROFILES:
+# default - default production config, secure
+# OVERRIDES:
+# opendb - opens the database on 5432 to the local machine
+# migrate - disables the bot, creates a migration service
+services:
+  # main python process
+  bot:
+    build: .
+    restart: always
+    volumes:
+      - ./storage/logs/:/app/storage/logs/
+      - ./configs:/app/configs/
+      - ./:/app/
+    depends_on:
+      db:
+        condition: service_healthy
+  # postgres database
+  db:
+    image: postgres:17.4-alpine
+    restart: always
+    environment:
+      POSTGRES_PASSWORD_FILE: /configs/dbPassword.secret
+    volumes:
+      - ./storage/db:/var/lib/postgresql/data # data storage
+      - ./configs/:/configs/ # for configurations
+    healthcheck:
+      test: [ "CMD-SHELL", "pg_isready", "-d", "bot_main" ]
+      interval: 30s
+      timeout: 60s
+      retries: 5
+      start_period: 80s
