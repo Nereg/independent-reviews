@@ -12,7 +12,7 @@ sql:
       - out: .
         plugin: py
         options:
-          package: sql
+          package: .
           emit_sync_querier: false
           emit_async_querier: true
           emit_str_enum: true
