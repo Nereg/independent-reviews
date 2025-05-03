@@ -2,8 +2,13 @@ import asyncio
 import logging
 
 import aiohttp
+import asyncpg
+from aiogram import Bot, Dispatcher
+from aiogram.client.default import DefaultBotProperties
+from aiogram.enums import ParseMode
 from sqlalchemy.ext.asyncio import AsyncConnection
 
+import handlers
 from config import GlobalConfig
 from ISICVerifier import ISICVerifier
 
@@ -36,13 +41,31 @@ def setupLogging(cfg: GlobalConfig) -> None:
     rootLogger.info("Set up logging!")
 
 
+async def runBot(
+    cfg: GlobalConfig, db: asyncpg.Pool, http: aiohttp.ClientSession, ISIC: ISICVerifier
+) -> tuple[Bot, Dispatcher]:
+    bot = Bot(
+        cfg.telegram.token,
+        default=DefaultBotProperties(parse_mode=ParseMode.MARKDOWN_V2),
+    )
+    dp = Dispatcher()
+    await handlers.load_all_commands(dp)
+    asyncio.create_task(
+        await dp.start_polling(bot, db=db, http=http, config=cfg, ISIC=ISIC),
+        name="Main Bot task",
+    )
+    return (bot, dp)
+
+
 async def main():
     cfg = GlobalConfig.load()
     setupLogging(cfg)
+    dbPool = asyncpg.create_pool(cfg.db.dsn)
     session = aiohttp.ClientSession()
     verif = await ISICVerifier.create(session)
-    print(await verif.verify("S421000648595J"))
-    print("Hello from independent-reviews!")
+    await runBot(cfg, dbPool, session, verif)
+    # print(await verif.verify("S421000648595J"))
+    # print("Hello from independent-reviews!")
 
 
 if __name__ == "__main__":

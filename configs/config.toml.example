@@ -1,0 +1,7 @@
+version = "Beta"
+logging_level = "DEBUG"
+debug = true
+[db]
+dsn = "postgres://postgres:superpassword@db:5432/bot_main" # URL encode passwords if they contain special chars!
+[telegram]
+token = "12367890"

@@ -26,6 +26,18 @@ class DbConfig(BaseConfig):
 
 
 @dataclasses.dataclass()
+class TelegramConfig(BaseConfig):
+    token: str
+
+    @classmethod
+    def load(cls, input: dict[str, Any] | None = None) -> Self:
+        if input is None:
+            raise ValueError("Input config is empty!")
+        dsn = input["token"]
+        return cls(dsn)
+
+
+@dataclasses.dataclass()
 class GlobalConfig(BaseConfig):
     """
     Global config class. Throws an error, if anything is missing
@@ -35,21 +47,18 @@ class GlobalConfig(BaseConfig):
     logging_level: str
     debug: bool
     db: DbConfig
+    telegram: TelegramConfig
 
     @classmethod
     def load(cls, input: dict[str, Any] | None = None) -> GlobalConfig:
         with open(CONFIG_PATH, "rb") as config_file:
             data = tomllib.load(config_file)
             db = DbConfig.load(data["db"])
+            tg = TelegramConfig.load(data["telegram"])
             # telegram = TelegramConfig.load(data["telegram"])
             # sources = SourcesConfig.load(data["sources"])
             # database = DatabaseConfig.load(data["database"])
             version = data["version"]
             logging_level = data["logging_level"]
             debug = bool(data["debug"])
-            return cls(
-                version,
-                logging_level,
-                debug,
-                db,
-            )
+            return cls(version, logging_level, debug, db, tg)
