@@ -51,7 +51,7 @@ async def runBot(
     dp = Dispatcher()
     await handlers.load_all_commands(dp)
     asyncio.create_task(
-        await dp.start_polling(bot, db=db, http=http, config=cfg, ISIC=ISIC),
+        dp.start_polling(bot, db=db, http=http, config=cfg, ISIC=ISIC),
         name="Main Bot task",
     )
     return (bot, dp)
@@ -60,10 +60,14 @@ async def runBot(
 async def main():
     cfg = GlobalConfig.load()
     setupLogging(cfg)
-    dbPool = asyncpg.create_pool(cfg.db.dsn)
+    dbPool = await asyncpg.create_pool(cfg.db.dsn)
     session = aiohttp.ClientSession()
     verif = await ISICVerifier.create(session)
     await runBot(cfg, dbPool, session, verif)
+    while True:
+        await asyncio.sleep(3600)
+    await dbPool.close()
+    await session.close()
     # print(await verif.verify("S421000648595J"))
     # print("Hello from independent-reviews!")
 

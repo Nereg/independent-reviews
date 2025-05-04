@@ -34,7 +34,7 @@ class ISICVerifier:
         )
         return await req.text()
 
-    async def verify(self, ISICNum: str) -> None:
+    async def verify(self, ISICNum: str) -> ISICInfo:
         page = await self._fetch(ISICNum)
         # print(page)
         if "Found card" not in page:

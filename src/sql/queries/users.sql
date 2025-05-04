@@ -1,4 +1,4 @@
--- name: registerTelegram :exec
+-- name: registerTelegram :one
 WITH tmp_id AS (
 	INSERT INTO users (registred)
 	VALUES (timezone('utc', now()))
@@ -6,9 +6,10 @@ WITH tmp_id AS (
 )
 INSERT INTO public.telegram(
 	"telegramId", "userId", "chatId")
-	SELECT sqlc.arg(tgUserId)::bigint,
+	SELECT $1,
     id,
-    sqlc.arg(tgChatId)::bigint FROM tmp_id;
+    $2 FROM tmp_id
+    RETURNING "userId";
 ;
 
 -- name: verifyUserByISIC :exec

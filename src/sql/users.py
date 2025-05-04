@@ -2,13 +2,15 @@
 # versions:
 #   sqlc v1.27.0
 # source: users.sql
+from typing import Optional
+
 import sqlalchemy
 import sqlalchemy.ext.asyncio
 
 from . import models
 
 
-REGISTER_TELEGRAM = """-- name: register_telegram \\:exec
+REGISTER_TELEGRAM = """-- name: register_telegram \\:one
 WITH tmp_id AS (
 	INSERT INTO users (registred)
 	VALUES (timezone('utc', now()))
@@ -16,9 +18,10 @@ WITH tmp_id AS (
 )
 INSERT INTO public.telegram(
 	"telegramId", "userId", "chatId")
-	SELECT :p1\\:\\:bigint,
+	SELECT :p1,
     id,
-    :p2\\:\\:bigint FROM tmp_id
+    :p2 FROM tmp_id
+    RETURNING "userId"
 """
 
 
@@ -42,8 +45,11 @@ class AsyncQuerier:
     def __init__(self, conn: sqlalchemy.ext.asyncio.AsyncConnection):
         self._conn = conn
 
-    async def register_telegram(self, *, tguserid: int, tgchatid: int) -> None:
-        await self._conn.execute(sqlalchemy.text(REGISTER_TELEGRAM), {"p1": tguserid, "p2": tgchatid})
+    async def register_telegram(self, *, telegramId: int, chatId: int) -> Optional[int]:
+        row = (await self._conn.execute(sqlalchemy.text(REGISTER_TELEGRAM), {"p1": telegramId, "p2": chatId})).first()
+        if row is None:
+            return None
+        return row[0]
 
     async def update_permissions(self, *, userId: int, permissions: int) -> None:
         await self._conn.execute(sqlalchemy.text(UPDATE_PERMISSIONS), {"p1": userId, "p2": permissions})
