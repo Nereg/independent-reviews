@@ -1,6 +1,9 @@
 from aiogram import Bot, F, Router
 from aiogram.filters import Command, CommandStart
-from aiogram.types import Message
+from aiogram.filters.callback_data import CallbackData
+from aiogram.types import CallbackQuery, Message
+from aiogram.types.inline_keyboard_button import InlineKeyboardButton
+from aiogram.types.inline_keyboard_markup import InlineKeyboardMarkup
 from aiogram.utils import formatting
 from aiogram.utils.chat_action import ChatActionSender
 
@@ -9,8 +12,18 @@ from ISICVerifier import ISICVerifier
 router: Router = Router()
 
 
+class VerificationConsent(CallbackData, prefix="vc"):
+    ISICChipId: int
+    AISId: int
+    faculty: int
+
+
+class VerificationDecline(CallbackData, prefix="vnc"):
+    pass
+
+
 @router.message(Command("verify"))
-async def command_start_handler(message: Message, ISIC: ISICVerifier) -> None:
+async def command_verify_handler(message: Message, ISIC: ISICVerifier) -> None:
     """
     This handler receives messages with `/createGroup` command
     """
@@ -57,7 +70,7 @@ async def command_start_handler(message: Message, ISIC: ISICVerifier) -> None:
                     formatting.Bold("ISIC Data"),
                     f"Name: {result.name}",
                     f"Surname: {result.surname}",
-                    f"Faculty: {result.faulty.name}",
+                    f"Faculty: {result.faculty.name}",
                     f"Valid until: {result.validDate.strftime("%d.%m.%Y")}",
                 )
             ),
@@ -65,7 +78,36 @@ async def command_start_handler(message: Message, ISIC: ISICVerifier) -> None:
                 "Do you wish to verify that you are a student ? You data will remain anonymous!"
             ),
         )
-        await message.answer(**payload.as_kwargs())
+        keyboard = InlineKeyboardMarkup(
+            inline_keyboard=[
+                [
+                    InlineKeyboardButton(
+                        text="Yes✅",
+                        callback_data=VerificationConsent(
+                            ISICChipId=result.ISICChipId,
+                            AISId=result.AISId,
+                            faculty=result.faculty,
+                        ).pack(),
+                    ),
+                    InlineKeyboardButton(
+                        text="No❌", callback_data=VerificationDecline().pack()
+                    ),
+                ]
+            ]
+        )
+        await message.answer(**payload.as_kwargs(), reply_markup=keyboard)
 
-    # print(await CreateGroup(int(params[0]), params[1]).run())
-    await message.answer("Hi\!")
+
+@router.callback_query(
+    VerificationConsent.filter(),
+)
+async def verification_consent_handler(callback_query: CallbackQuery):
+    await callback_query.answer("Accepted!")
+    # await callback_query.
+
+
+@router.callback_query(
+    VerificationDecline.filter(),
+)
+async def verification_decline_handler(callback_query: CallbackQuery):
+    await callback_query.answer("Declined!")

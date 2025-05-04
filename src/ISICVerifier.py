@@ -12,7 +12,7 @@ from commons import Faculty
 class ISICInfo:
     AISId: int
     ISICChipId: int
-    faulty: Faculty
+    faculty: Faculty
     valid: bool
     name: str
     surname: str
