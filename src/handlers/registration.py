@@ -29,7 +29,9 @@ class VerificationDecline(CallbackData, prefix="vnc"):
 
 
 @router.message(Command("verify"))
-async def command_verify_handler(message: Message, ISIC: ISICVerifier) -> None:
+async def command_verify_handler(
+    message: Message, ISIC: ISICVerifier, db: asyncpg.Pool
+) -> None:
     """
     This handler receives messages with `/createGroup` command
     """
@@ -53,7 +55,17 @@ async def command_verify_handler(message: Message, ISIC: ISICVerifier) -> None:
         await message.answer(f"`{params[0]}` is not a valid ISIC chip/card number\!")
         return
     else:
-        # TODO: handle the case when the user is already verified
+        user = None
+        async with db.acquire() as con:
+            querier = users.AsyncQuerier(convert(con))
+            userId = await querier.get_user_by_telegram_id(
+                telegramId=message.from_user.id
+            )
+            if userId is not None:
+                user = await querier.get_user(id=userId)
+        if user is not None and user.ISICNum is not None:
+            await message.answer("It seems you are already verified\!")
+            return
         await message.answer(
             "ISIC card number seems valid\! Please wait, while we verify that you are a student\!"
         )
