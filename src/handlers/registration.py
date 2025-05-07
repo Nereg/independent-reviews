@@ -1,3 +1,6 @@
+import logging
+
+import asyncpg
 from aiogram import Bot, F, Router
 from aiogram.filters import Command, CommandStart
 from aiogram.filters.callback_data import CallbackData
@@ -8,8 +11,11 @@ from aiogram.utils import formatting
 from aiogram.utils.chat_action import ChatActionSender
 
 from ISICVerifier import ISICVerifier
+from sql import users
+from sql.util import convert
 
 router: Router = Router()
+logger = logging.getLogger(__name__)
 
 
 class VerificationConsent(CallbackData, prefix="vc"):
@@ -47,6 +53,7 @@ async def command_verify_handler(message: Message, ISIC: ISICVerifier) -> None:
         await message.answer(f"`{params[0]}` is not a valid ISIC chip/card number\!")
         return
     else:
+        # TODO: handle the case when the user is already verified
         await message.answer(
             "ISIC card number seems valid\! Please wait, while we verify that you are a student\!"
         )
@@ -101,9 +108,24 @@ async def command_verify_handler(message: Message, ISIC: ISICVerifier) -> None:
 @router.callback_query(
     VerificationConsent.filter(),
 )
-async def verification_consent_handler(callback_query: CallbackQuery):
+async def verification_consent_handler(callback_query: CallbackQuery, db: asyncpg.Pool):
+    data = VerificationConsent.unpack(callback_query.data)
     await callback_query.answer("Accepted!")
-    # await callback_query.
+    await callback_query.message.answer(
+        "Thanks\! Now you can leave anonymous reviews and help your fellow students"
+    )
+    async with db.acquire() as con:
+        async with con.transaction():
+            querier = users.AsyncQuerier(convert(con))
+            userId = await querier.get_user_by_telegram_id(
+                telegramId=callback_query.from_user.id
+            )
+            await querier.verify_user_by_isic(
+                id=userId,
+                ISICNum=data.ISICChipId,
+                facultyId=data.faculty,
+                aisId=data.AISId,
+            )
 
 
 @router.callback_query(
@@ -111,3 +133,6 @@ async def verification_consent_handler(callback_query: CallbackQuery):
 )
 async def verification_decline_handler(callback_query: CallbackQuery):
     await callback_query.answer("Declined!")
+    await callback_query.message.answer(
+        "You declined, none of your data was recorded. You can restart the verification process at any time."
+    )

@@ -10,6 +10,16 @@ import sqlalchemy.ext.asyncio
 from . import models
 
 
+GET_USER = """-- name: get_user \\:one
+SELECT id, "aisId", "facultyId", "eduEmail", "ISICNum", registred FROM users WHERE "id"=:p1
+"""
+
+
+GET_USER_BY_TELEGRAM_ID = """-- name: get_user_by_telegram_id \\:one
+SELECT "userId" FROM telegram WHERE "telegramId" = :p1
+"""
+
+
 REGISTER_TELEGRAM = """-- name: register_telegram \\:one
 WITH tmp_id AS (
 	INSERT INTO users (registred)
@@ -35,15 +45,35 @@ ON CONFLICT ("userId") DO UPDATE
 
 VERIFY_USER_BY_ISIC = """-- name: verify_user_by_isic \\:exec
 UPDATE users SET 
-    "ISICNum"=:p2\\:\\:bigint,
-    "facultyId"=:p3\\:\\:int
-    WHERE "id"=:p1
+    "ISICNum"=:p1,
+    "facultyId"=:p2,
+    "aisId"=:p3
+    WHERE "id"=:p4
 """
 
 
 class AsyncQuerier:
     def __init__(self, conn: sqlalchemy.ext.asyncio.AsyncConnection):
         self._conn = conn
+
+    async def get_user(self, *, id: int) -> Optional[models.User]:
+        row = (await self._conn.execute(sqlalchemy.text(GET_USER), {"p1": id})).first()
+        if row is None:
+            return None
+        return models.User(
+            id=row[0],
+            aisId=row[1],
+            facultyId=row[2],
+            eduEmail=row[3],
+            ISICNum=row[4],
+            registred=row[5],
+        )
+
+    async def get_user_by_telegram_id(self, *, telegramId: int) -> Optional[int]:
+        row = (await self._conn.execute(sqlalchemy.text(GET_USER_BY_TELEGRAM_ID), {"p1": telegramId})).first()
+        if row is None:
+            return None
+        return row[0]
 
     async def register_telegram(self, *, telegramId: int, chatId: int) -> Optional[int]:
         row = (await self._conn.execute(sqlalchemy.text(REGISTER_TELEGRAM), {"p1": telegramId, "p2": chatId})).first()
@@ -54,5 +84,10 @@ class AsyncQuerier:
     async def update_permissions(self, *, userId: int, permissions: int) -> None:
         await self._conn.execute(sqlalchemy.text(UPDATE_PERMISSIONS), {"p1": userId, "p2": permissions})
 
-    async def verify_user_by_isic(self, *, id: int, isicnum: int, facultyid: int) -> None:
-        await self._conn.execute(sqlalchemy.text(VERIFY_USER_BY_ISIC), {"p1": id, "p2": isicnum, "p3": facultyid})
+    async def verify_user_by_isic(self, *, ISICNum: Optional[int], facultyId: Optional[int], aisId: Optional[int], id: int) -> None:
+        await self._conn.execute(sqlalchemy.text(VERIFY_USER_BY_ISIC), {
+            "p1": ISICNum,
+            "p2": facultyId,
+            "p3": aisId,
+            "p4": id,
+        })

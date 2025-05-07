@@ -12,11 +12,18 @@ INSERT INTO public.telegram(
     RETURNING "userId";
 ;
 
+-- name: getUserByTelegramId :one
+SELECT "userId" FROM telegram WHERE "telegramId" = $1;
+
 -- name: verifyUserByISIC :exec
 UPDATE users SET 
-    "ISICNum"=sqlc.arg(ISICNum)::bigint,
-    "facultyId"=sqlc.arg(facultyId)::int
-    WHERE "id"=$1;
+    "ISICNum"=$1,
+    "facultyId"=$2,
+    "aisId"=$3
+    WHERE "id"=$4;
+
+-- name: getUser :one
+SELECT * FROM users WHERE "id"=$1;
 
 -- name: updatePermissions :exec
 INSERT INTO permissions ("userId", "permissions") 

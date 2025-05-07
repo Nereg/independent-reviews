@@ -14,3 +14,8 @@ dependencies = [
 
 [tool.uv.sources]
 sqlc-asyncpg-compat = { git = "https://github.com/Nereg/sqlc-asyncpg-compat.git" }
+
+[dependency-groups]
+dev = [
+    "asyncpg-stubs>=0.30.1",
+]
