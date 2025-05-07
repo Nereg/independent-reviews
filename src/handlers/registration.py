@@ -18,6 +18,7 @@ router: Router = Router()
 logger = logging.getLogger(__name__)
 
 
+# Callback data structures
 class VerificationConsent(CallbackData, prefix="vc"):
     ISICChipId: int
     AISId: int
@@ -35,7 +36,9 @@ async def command_verify_handler(
     """
     This handler receives messages with `/createGroup` command
     """
+    # 1st param is the command name
     params = message.text.split(" ")[1:]
+    # respond with a pretty error message if we don't have any parameters
     if len(params) <= 0:
         payload = formatting.as_list(
             formatting.Bold(
@@ -51,11 +54,13 @@ async def command_verify_handler(
         )
         await message.answer(**payload.as_kwargs())
         return
+    # check for basic conformity 10 < len < 20 while allowing some leeway
     if len(params[0]) < 10 or len(params[0]) > 20:
         await message.answer(f"`{params[0]}` is not a valid ISIC chip/card number\!")
         return
     else:
         user = None
+        # check if the user is already verified
         async with db.acquire() as con:
             querier = users.AsyncQuerier(convert(con))
             userId = await querier.get_user_by_telegram_id(
@@ -66,12 +71,14 @@ async def command_verify_handler(
         if user is not None and user.ISICNum is not None:
             await message.answer("It seems you are already verified\!")
             return
+        # else, verify the given ISIC num using the API
         await message.answer(
             "ISIC card number seems valid\! Please wait, while we verify that you are a student\!"
         )
+        # send a "typing" action while the AIS is working
         async with ChatActionSender(bot=message.bot, chat_id=message.chat.id):
             try:
-                result = await ISIC.verify(params[0])
+                result = await ISIC.verify(params[0].upper())
             except ValueError as e:
                 await message.answer(
                     f"`{params[0]}` is not a valid ISIC chip/card number\!"
@@ -114,9 +121,11 @@ async def command_verify_handler(
                 ]
             ]
         )
+        # send the final message, has two buttons so the user can agree or decline the verification
         await message.answer(**payload.as_kwargs(), reply_markup=keyboard)
 
 
+# gets called if the user accepts the verification
 @router.callback_query(
     VerificationConsent.filter(),
 )
@@ -127,17 +136,16 @@ async def verification_consent_handler(callback_query: CallbackQuery, db: asyncp
         "Thanks\! Now you can leave anonymous reviews and help your fellow students"
     )
     async with db.acquire() as con:
-        async with con.transaction():
-            querier = users.AsyncQuerier(convert(con))
-            userId = await querier.get_user_by_telegram_id(
-                telegramId=callback_query.from_user.id
-            )
-            await querier.verify_user_by_isic(
-                id=userId,
-                ISICNum=data.ISICChipId,
-                facultyId=data.faculty,
-                aisId=data.AISId,
-            )
+        querier = users.AsyncQuerier(convert(con))
+        userId = await querier.get_user_by_telegram_id(
+            telegramId=callback_query.from_user.id
+        )
+        await querier.verify_user_by_isic(
+            id=userId,
+            ISICNum=data.ISICChipId,
+            facultyId=data.faculty,
+            aisId=data.AISId,
+        )
 
 
 @router.callback_query(
