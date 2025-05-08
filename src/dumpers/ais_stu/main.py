@@ -18,6 +18,8 @@ sys.path.insert(
 from config import GlobalConfig
 from sql import subjects, util
 
+DRY_RUN = False
+
 
 @dataclasses.dataclass
 class Subject:
@@ -31,12 +33,12 @@ async def fetch(session: aiohttp.ClientSession) -> str:
     """
     Fetches whatever whole page from AIS you specified with parameters
     """
-    payload = {  # STU FIIT, LS 24/25, faculty 1, semester 2
+    payload = {  # STU FIIT, ZS 24/25, faculty 1, semester 1
         "ustav": 0,
         "vypsat": "Vypísať predmety",
         "fakulta": 21070,
         "obdobi": 361,
-        "obdobi_fak": 703,
+        "obdobi_fak": 691,
         "jak": "dle_pracovist",
         "lang": "sk",
     }
@@ -56,16 +58,21 @@ def parseLink(link: bs4.Tag) -> Subject | None:
     name = comb_name.split(" ", maxsplit=1)[1]
     char_stage = code.split("_")[-1]
     # print(char_stage)
-    if char_stage in ["UISI", "UPAI"]:
+    if char_stage in ["UISI", "UPAI", "IB", "ISS"]:  # VPP_IB, VPP_ISS
         stage = 2
         print("Weird subject!")
-    elif char_stage in ["L", "TK"]:  # TK_L +  VYBER_TK Výberová telesná kultúra
+    elif char_stage in [
+        "L",
+        "TK",
+        "Z",
+    ]:  # TK_L + TK_Z +  VYBER_TK Výberová telesná kultúra
         stage = 1
     elif char_stage == "B":
         stage = 1
     elif char_stage == "I":
         stage = 2
     else:
+        print(char_stage)
         raise ValueError()
     return Subject(code, name, sid, stage)
 
@@ -77,7 +84,7 @@ async def insertSubject(input: Subject, querier: subjects.AsyncQuerier) -> None:
             facultyId=1,
             aisid=input.ais_id,
             stage=input.stage,
-            semester=2,
+            semester=1,
             aisCode=input.code,
         )
     )
@@ -96,7 +103,7 @@ async def main():
     for link in thelinks:
         sub = parseLink(link)
         print(sub)
-        if sub is not None:
+        if sub is not None and not DRY_RUN:
             await insertSubject(sub, querier)
     await ses.close()
     # await ses.close()
