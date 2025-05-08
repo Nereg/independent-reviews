@@ -2,8 +2,8 @@ version: "2"
 plugins:
   - name: py
     wasm:
-      url: https://downloads.sqlc.dev/plugin/sqlc-gen-python_1.3.0.wasm
-      sha256: fbedae96b5ecae2380a70fb5b925fd4bff58a6cfb1f3140375d098fbab7b3a3c
+      url: https://github.com/rayakame/sqlc-gen-better-python/releases/download/v0.3.1/sqlc-gen-better-python.wasm
+      sha256: 6e2a6d4d4a2320e32ebc25bf718342d97d2de75fc6fd00bf196ca3e5edca6ee8
 sql:
   - engine: "postgresql" 
     queries: "queries"
@@ -13,6 +13,9 @@ sql:
         plugin: py
         options:
           package: .
+          emit_init_file: true
+          sql_driver: "asyncpg"
+          initialisms: ["ISIC", "id"]
           emit_sync_querier: false
           emit_async_querier: true
           emit_str_enum: true

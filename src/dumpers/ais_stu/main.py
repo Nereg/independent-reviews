@@ -16,7 +16,7 @@ sys.path.insert(
 )  # PATH hack to import out standard things
 
 from config import GlobalConfig
-from sql import subjects, util
+from sql.subjects import create_subject
 
 DRY_RUN = False
 
@@ -77,23 +77,21 @@ def parseLink(link: bs4.Tag) -> Subject | None:
     return Subject(code, name, sid, stage)
 
 
-async def insertSubject(input: Subject, querier: subjects.AsyncQuerier) -> None:
-    await querier.create_subject(
-        subjects.createSubjectParams(
-            input.name,
-            facultyId=1,
-            aisid=input.ais_id,
-            stage=input.stage,
-            semester=1,
-            aisCode=input.code,
-        )
+async def insertSubject(input: Subject, con: asyncpg.Connection) -> None:
+    await create_subject(
+        con,
+        name=input.name,
+        facultyId=1,
+        aisid=input.ais_id,
+        stage=input.stage,
+        semester=1,
+        aisCode=input.code,
     )
 
 
 async def main():
     cfg = GlobalConfig.load()
     con = await asyncpg.connect(cfg.db.dsn)
-    querier = subjects.AsyncQuerier(util.convert(con))
     ses = aiohttp.ClientSession()
     text = await fetch(ses)
     print(len(text))
@@ -104,7 +102,7 @@ async def main():
         sub = parseLink(link)
         print(sub)
         if sub is not None and not DRY_RUN:
-            await insertSubject(sub, querier)
+            await insertSubject(sub, con)
     await ses.close()
     # await ses.close()
 

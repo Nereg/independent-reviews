@@ -62,12 +62,11 @@ async def command_verify_handler(
         user = None
         # check if the user is already verified
         async with db.acquire() as con:
-            querier = users.AsyncQuerier(convert(con))
-            userId = await querier.get_user_by_telegram_id(
-                telegramId=message.from_user.id
+            userId = await users.get_user_by_telegram_id(
+                con, telegramId=message.from_user.id
             )
             if userId is not None:
-                user = await querier.get_user(id=userId)
+                user = await users.get_user(con, id=userId)
         if user is not None and user.ISICNum is not None:
             await message.answer("It seems you are already verified\!")
             return
@@ -136,11 +135,11 @@ async def verification_consent_handler(callback_query: CallbackQuery, db: asyncp
         "Thanks\! Now you can leave anonymous reviews and help your fellow students"
     )
     async with db.acquire() as con:
-        querier = users.AsyncQuerier(convert(con))
-        userId = await querier.get_user_by_telegram_id(
-            telegramId=callback_query.from_user.id
+        userId = await users.get_user_by_telegram_id(
+            con, telegramId=callback_query.from_user.id
         )
-        await querier.verify_user_by_isic(
+        await users.verify_user_by_i_s_i_c(
+            con,
             id=userId,
             ISICNum=data.ISICChipId,
             facultyId=data.faculty,
