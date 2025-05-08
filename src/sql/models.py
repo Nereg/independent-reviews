@@ -52,6 +52,7 @@ class Review:
     lectorReview: Optional[str]
     yearBeginning: int
     timestamp: datetime.datetime
+    mark: Optional[int]
 
 
 @dataclasses.dataclass()
@@ -59,8 +60,10 @@ class Subject:
     id: int
     name: str
     facultyId: int
-    aisid: Optional[int]
+    aisid: int
     stage: int
+    semester: int
+    aisCode: str
 
 
 @dataclasses.dataclass()
