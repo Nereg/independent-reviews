@@ -60,9 +60,10 @@ class Subject:
     id: int
     name: str
     facultyId: int
-    aisid: Optional[int]
+    aisid: int
     stage: int
     semester: int
+    aisCode: str
 
 
 @dataclasses.dataclass()

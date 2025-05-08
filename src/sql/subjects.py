@@ -12,8 +12,8 @@ from . import models
 
 
 CREATE_SUBJECT = """-- name: create_subject \\:one
-INSERT INTO subjects ("name", "facultyId", "aisid", "stage", "semester")
-VALUES (:p1,:p2,:p3,:p4,:p5)
+INSERT INTO subjects ("name", "facultyId", "aisid", "stage", "semester", "aisCode")
+VALUES (:p1,:p2,:p3,:p4,:p5,:p6)
 RETURNING "id"
 """
 
@@ -22,38 +22,39 @@ RETURNING "id"
 class createSubjectParams:
     name: str
     facultyId: int
-    aisid: Optional[int]
+    aisid: int
     stage: int
     semester: int
+    aisCode: str
 
 
 GET_SUBJECT_BY_ID = """-- name: get_subject_by_id \\:one
-SELECT id, name, "facultyId", aisid, stage, semester FROM subjects WHERE "id"=:p1
+SELECT id, name, "facultyId", aisid, stage, semester, "aisCode" FROM subjects WHERE "id"=:p1
 """
 
 
 GET_SUBJECT_BY_SEMESTER = """-- name: get_subject_by_semester \\:many
-SELECT id, name, "facultyId", aisid, stage, semester FROM subjects WHERE "semester"=:p1
+SELECT id, name, "facultyId", aisid, stage, semester, "aisCode" FROM subjects WHERE "semester"=:p1
 """
 
 
 GET_SUBJECT_BY_SEMESTER_FACULTY_STAGE = """-- name: get_subject_by_semester_faculty_stage \\:many
-SELECT id, name, "facultyId", aisid, stage, semester FROM subjects WHERE "semester"=:p1 AND "facultyId"=:p2 AND "stage"=:p3
+SELECT id, name, "facultyId", aisid, stage, semester, "aisCode" FROM subjects WHERE "semester"=:p1 AND "facultyId"=:p2 AND "stage"=:p3
 """
 
 
 GET_SUBJECTS = """-- name: get_subjects \\:many
-SELECT id, name, "facultyId", aisid, stage, semester FROM subjects
+SELECT id, name, "facultyId", aisid, stage, semester, "aisCode" FROM subjects
 """
 
 
 GET_SUBJECTS_BY_FACULTY = """-- name: get_subjects_by_faculty \\:many
-SELECT id, name, "facultyId", aisid, stage, semester FROM subjects WHERE "facultyId"=:p1
+SELECT id, name, "facultyId", aisid, stage, semester, "aisCode" FROM subjects WHERE "facultyId"=:p1
 """
 
 
 GET_SUBJECTS_BY_STAGE = """-- name: get_subjects_by_stage \\:many
-SELECT id, name, "facultyId", aisid, stage, semester FROM subjects WHERE "stage"=:p1
+SELECT id, name, "facultyId", aisid, stage, semester, "aisCode" FROM subjects WHERE "stage"=:p1
 """
 
 
@@ -68,6 +69,7 @@ class AsyncQuerier:
             "p3": arg.aisid,
             "p4": arg.stage,
             "p5": arg.semester,
+            "p6": arg.aisCode,
         })).first()
         if row is None:
             return None
@@ -84,6 +86,7 @@ class AsyncQuerier:
             aisid=row[3],
             stage=row[4],
             semester=row[5],
+            aisCode=row[6],
         )
 
     async def get_subject_by_semester(self, *, semester: int) -> AsyncIterator[models.Subject]:
@@ -96,6 +99,7 @@ class AsyncQuerier:
                 aisid=row[3],
                 stage=row[4],
                 semester=row[5],
+                aisCode=row[6],
             )
 
     async def get_subject_by_semester_faculty_stage(self, *, semester: int, facultyId: int, stage: int) -> AsyncIterator[models.Subject]:
@@ -108,6 +112,7 @@ class AsyncQuerier:
                 aisid=row[3],
                 stage=row[4],
                 semester=row[5],
+                aisCode=row[6],
             )
 
     async def get_subjects(self) -> AsyncIterator[models.Subject]:
@@ -120,6 +125,7 @@ class AsyncQuerier:
                 aisid=row[3],
                 stage=row[4],
                 semester=row[5],
+                aisCode=row[6],
             )
 
     async def get_subjects_by_faculty(self, *, facultyId: int) -> AsyncIterator[models.Subject]:
@@ -132,6 +138,7 @@ class AsyncQuerier:
                 aisid=row[3],
                 stage=row[4],
                 semester=row[5],
+                aisCode=row[6],
             )
 
     async def get_subjects_by_stage(self, *, stage: int) -> AsyncIterator[models.Subject]:
@@ -144,4 +151,5 @@ class AsyncQuerier:
                 aisid=row[3],
                 stage=row[4],
                 semester=row[5],
+                aisCode=row[6],
             )

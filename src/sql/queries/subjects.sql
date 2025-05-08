@@ -17,6 +17,6 @@ SELECT * FROM subjects WHERE "stage"=$1;
 SELECT * FROM subjects WHERE "semester"=$1 AND "facultyId"=$2 AND "stage"=$3;
 
 -- name: createSubject :one
-INSERT INTO subjects ("name", "facultyId", "aisid", "stage", "semester")
-VALUES ($1,$2,$3,$4,$5)
+INSERT INTO subjects ("name", "facultyId", "aisid", "stage", "semester", "aisCode")
+VALUES ($1,$2,$3,$4,$5,$6)
 RETURNING "id";
