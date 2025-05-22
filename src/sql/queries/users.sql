@@ -15,7 +15,7 @@ INSERT INTO public.telegram(
 -- name: getUserByTelegramId :one
 SELECT "userId" FROM telegram WHERE "telegramId" = $1;
 
--- name: verifyUserByISIC :exec
+-- name: verifyUserByIsic :exec
 UPDATE users SET 
     "ISICNum"=$1,
     "facultyId"=$2,

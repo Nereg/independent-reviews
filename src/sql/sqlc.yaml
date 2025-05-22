@@ -1,18 +1,22 @@
 version: "2"
 plugins:
-  - name: py
+  - name: python
     wasm:
-      url: https://downloads.sqlc.dev/plugin/sqlc-gen-python_1.3.0.wasm
-      sha256: fbedae96b5ecae2380a70fb5b925fd4bff58a6cfb1f3140375d098fbab7b3a3c
+      url: https://github.com/rayakame/sqlc-gen-better-python/releases/download/v0.4.0/sqlc-gen-better-python.wasm
+      sha256: 4abc65163287f21bbb10325f7ba0b2f5aefd13e316e59af06e9b5d73c83ca4b5
 sql:
   - engine: "postgresql" 
     queries: "queries"
     schema: "migrations"
     codegen:
       - out: .
-        plugin: py
+        plugin: python
         options:
           package: .
-          emit_sync_querier: false
-          emit_async_querier: true
-          emit_str_enum: true
+          emit_init_file: false
+          sql_driver: "asyncpg"
+          docstrings: "google"
+          initialisms: ["id", "isic", "ISIC"]
+          emit_classes: false
+          docstrings_emit_sql: false
+          # debug: true
