@@ -9,11 +9,7 @@ dependencies = [
     "aiohttp>=3.11.18",
     "asyncpg>=0.30.0",
     "beautifulsoup4>=4.13.4",
-    "sqlc-asyncpg-compat",
 ]
-
-[tool.uv.sources]
-sqlc-asyncpg-compat = { git = "https://github.com/Nereg/sqlc-asyncpg-compat.git" }
 
 [dependency-groups]
 dev = [

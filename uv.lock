@@ -348,7 +348,6 @@ dependencies = [
     { name = "aiohttp" },
     { name = "asyncpg" },
     { name = "beautifulsoup4" },
-    { name = "sqlc-asyncpg-compat" },
 ]
 
 [package.dev-dependencies]
@@ -362,7 +361,6 @@ requires-dist = [
     { name = "aiohttp", specifier = ">=3.11.18" },
     { name = "asyncpg", specifier = ">=0.30.0" },
     { name = "beautifulsoup4", specifier = ">=4.13.4" },
-    { name = "sqlc-asyncpg-compat", git = "https://github.com/Nereg/sqlc-asyncpg-compat.git" },
 ]
 
 [package.metadata.requires-dev]
@@ -672,15 +670,6 @@ source = { registry = "https://pypi.org/simple" }
 sdist = { url = "https://files.pythonhosted.org/packages/3f/f4/4a80cd6ef364b2e8b65b15816a843c0980f7a5a2b4dc701fc574952aa19f/soupsieve-2.7.tar.gz", hash = "sha256:ad282f9b6926286d2ead4750552c8a6142bc4c783fd66b0293547c8fe6ae126a", size = 103418 }
 wheels = [
     { url = "https://files.pythonhosted.org/packages/e7/9c/0e6afc12c269578be5c0c1c9f4b49a8d32770a080260c333ac04cc1c832d/soupsieve-2.7-py3-none-any.whl", hash = "sha256:6e60cc5c1ffaf1cebcc12e8188320b72071e922c2e897f737cadce79ad5d30c4", size = 36677 },
-]
-
-[[package]]
-name = "sqlc-asyncpg-compat"
-version = "0.0.1"
-source = { git = "https://github.com/Nereg/sqlc-asyncpg-compat.git#4999caafd2cc221da8d375590a4da28fafc115df" }
-dependencies = [
-    { name = "asyncpg" },
-    { name = "typing-extensions" },
 ]
 
 [[package]]
