@@ -11,8 +11,7 @@ from aiogram.utils import formatting
 from aiogram.utils.chat_action import ChatActionSender
 
 from ISICVerifier import ISICVerifier
-from sql import users
-from sql.util import convert
+from sql.users import get_user, get_user_by_telegram_id, verify_user_by_isic
 
 router: Router = Router()
 logger = logging.getLogger(__name__)
@@ -56,24 +55,21 @@ async def command_verify_handler(
         return
     # check for basic conformity 10 < len < 20 while allowing some leeway
     if len(params[0]) < 10 or len(params[0]) > 20:
-        await message.answer(f"`{params[0]}` is not a valid ISIC chip/card number\!")
+        await message.answer(f"`{params[0]}` is not a valid ISIC chip/card number\\!")
         return
     else:
         user = None
         # check if the user is already verified
         async with db.acquire() as con:
-            querier = users.AsyncQuerier(convert(con))
-            userId = await querier.get_user_by_telegram_id(
-                telegramId=message.from_user.id
-            )
+            userId = await get_user_by_telegram_id(con, telegramId=message.from_user.id)
             if userId is not None:
-                user = await querier.get_user(id=userId)
+                user = await get_user(con, id_=userId)
         if user is not None and user.ISICNum is not None:
-            await message.answer("It seems you are already verified\!")
+            await message.answer("It seems you are already verified\\!")
             return
         # else, verify the given ISIC num using the API
         await message.answer(
-            "ISIC card number seems valid\! Please wait, while we verify that you are a student\!"
+            "ISIC card number seems valid\\! Please wait, while we verify that you are a student\\!"
         )
         # send a "typing" action while the AIS is working
         async with ChatActionSender(bot=message.bot, chat_id=message.chat.id):
@@ -81,12 +77,12 @@ async def command_verify_handler(
                 result = await ISIC.verify(params[0].upper())
             except ValueError as e:
                 await message.answer(
-                    f"`{params[0]}` is not a valid ISIC chip/card number\!"
+                    f"`{params[0]}` is not a valid ISIC chip/card number\\!"
                 )
                 return
         if not result.valid:
             await message.answer(
-                f"ISIC `{params[0]}` was valid until `{result.validDate.strftime("%d.%m.%Y")}`\!"
+                f"ISIC `{params[0]}` was valid until `{result.validDate.strftime("%d.%m.%Y")}`\\!"
             )
             return
         payload = formatting.as_list(
@@ -136,12 +132,12 @@ async def verification_consent_handler(callback_query: CallbackQuery, db: asyncp
         "Thanks\! Now you can leave anonymous reviews and help your fellow students"
     )
     async with db.acquire() as con:
-        querier = users.AsyncQuerier(convert(con))
-        userId = await querier.get_user_by_telegram_id(
-            telegramId=callback_query.from_user.id
+        userId = await get_user_by_telegram_id(
+            con, telegramId=callback_query.from_user.id
         )
-        await querier.verify_user_by_isic(
-            id=userId,
+        await verify_user_by_isic(
+            con,
+            id_=userId,
             ISICNum=data.ISICChipId,
             facultyId=data.faculty,
             aisId=data.AISId,
