@@ -5,8 +5,6 @@ from aiogram import F, Router
 from aiogram.filters import Command, CommandStart
 from aiogram.types import Message
 
-import sql
-import sql.util
 from sql.users import register_telegram
 
 router: Router = Router()
