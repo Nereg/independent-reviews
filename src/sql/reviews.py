@@ -49,7 +49,7 @@ class getReviewByIdRow:
         lectorReview: str | None
         yearBeginning: int
         timestamp: datetime.datetime
-        mark: int | None
+        mark: float
         name: str
         facultyId: int
         aisid: int
@@ -72,7 +72,7 @@ class getReviewByIdRow:
     lectorReview: str | None
     yearBeginning: int
     timestamp: datetime.datetime
-    mark: int | None
+    mark: float
     name: str
     facultyId: int
     aisid: int
@@ -100,7 +100,7 @@ class getReviewsByIdsRow:
         lectorReview: str | None
         yearBeginning: int
         timestamp: datetime.datetime
-        mark: int | None
+        mark: float
         name: str
         facultyId: int
         aisid: int
@@ -123,7 +123,7 @@ class getReviewsByIdsRow:
     lectorReview: str | None
     yearBeginning: int
     timestamp: datetime.datetime
-    mark: int | None
+    mark: float
     name: str
     facultyId: int
     aisid: int

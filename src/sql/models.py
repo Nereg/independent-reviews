@@ -106,7 +106,7 @@ class Review:
         lectorReview: str | None
         yearBeginning: int
         timestamp: datetime.datetime
-        mark: int | None
+        mark: float
     """
 
     id: int
@@ -124,7 +124,7 @@ class Review:
     lectorReview: str | None
     yearBeginning: int
     timestamp: datetime.datetime
-    mark: int | None
+    mark: float
 
 
 @dataclasses.dataclass()
