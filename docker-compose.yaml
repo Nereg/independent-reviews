@@ -25,7 +25,8 @@ services:
       POSTGRES_PASSWORD_FILE: /configs/dbPassword.secret
     volumes:
       - ./storage/db:/var/lib/postgresql/data # data storage
-      - ./configs/:/configs/ # for configurations
+      - ./configs/:/configs/:ro # for configurations
+      - ./src/sql/fulltext_dicts:/usr/local/share/postgresql/tsearch_data:ro
     healthcheck:
       test: [ "CMD-SHELL", "pg_isready", "-d", "bot_main" ]
       interval: 30s
