@@ -14,6 +14,7 @@ __all__: collections.abc.Sequence[str] = (
     "get_subjects",
     "get_subjects_by_faculty",
     "get_subjects_by_stage",
+    "search_subject",
 )
 
 import dataclasses
@@ -40,27 +41,37 @@ RETURNING "id"
 """
 
 GET_SUBJECT_BY_ID: typing.Final[str] = """-- name: getSubjectById :one
-SELECT id, name, "facultyId", aisid, stage, semester, "aisCode" FROM subjects WHERE "id"=$1
+SELECT id, name, "facultyId", aisid, stage, semester, "aisCode", search_vector FROM subjects WHERE "id"=$1
 """
 
 GET_SUBJECT_BY_SEMESTER: typing.Final[str] = """-- name: getSubjectBySemester :many
-SELECT id, name, "facultyId", aisid, stage, semester, "aisCode" FROM subjects WHERE "semester"=$1
+SELECT id, name, "facultyId", aisid, stage, semester, "aisCode", search_vector FROM subjects WHERE "semester"=$1
 """
 
 GET_SUBJECT_BY_SEMESTER_FACULTY_STAGE: typing.Final[str] = """-- name: getSubjectBySemesterFacultyStage :many
-SELECT id, name, "facultyId", aisid, stage, semester, "aisCode" FROM subjects WHERE "semester"=$1 AND "facultyId"=$2 AND "stage"=$3
+SELECT id, name, "facultyId", aisid, stage, semester, "aisCode", search_vector FROM subjects WHERE "semester"=$1 AND "facultyId"=$2 AND "stage"=$3
 """
 
 GET_SUBJECTS: typing.Final[str] = """-- name: getSubjects :many
-SELECT id, name, "facultyId", aisid, stage, semester, "aisCode" FROM subjects
+SELECT id, name, "facultyId", aisid, stage, semester, "aisCode", search_vector FROM subjects
 """
 
 GET_SUBJECTS_BY_FACULTY: typing.Final[str] = """-- name: getSubjectsByFaculty :many
-SELECT id, name, "facultyId", aisid, stage, semester, "aisCode" FROM subjects WHERE "facultyId"=$1
+SELECT id, name, "facultyId", aisid, stage, semester, "aisCode", search_vector FROM subjects WHERE "facultyId"=$1
 """
 
 GET_SUBJECTS_BY_STAGE: typing.Final[str] = """-- name: getSubjectsByStage :many
-SELECT id, name, "facultyId", aisid, stage, semester, "aisCode" FROM subjects WHERE "stage"=$1
+SELECT id, name, "facultyId", aisid, stage, semester, "aisCode", search_vector FROM subjects WHERE "stage"=$1
+"""
+
+SEARCH_SUBJECT: typing.Final[str] = """-- name: searchSubject :many
+WITH search AS (
+    SELECT to_tsquery('slovak', string_agg(lexeme || ':*', ' & ' order by positions)) AS query
+    FROM unnest(to_tsvector('slovak', UNACCENT($1)))
+)
+SELECT subjects.id, subjects.name, subjects."facultyId", subjects.aisid, subjects.stage, subjects.semester, subjects."aisCode", subjects.search_vector
+FROM subjects, search
+WHERE (subjects.search_vector @@ search.query)
 """
 
 
@@ -176,7 +187,7 @@ async def get_subject_by_id(conn: ConnectionLike, *, id_: int) -> models.Subject
     row = await conn.fetchrow(GET_SUBJECT_BY_ID, id_)
     if row is None:
         return None
-    return models.Subject(id=row[0], name=row[1], facultyId=row[2], aisid=row[3], stage=row[4], semester=row[5], aisCode=row[6])
+    return models.Subject(id=row[0], name=row[1], facultyId=row[2], aisid=row[3], stage=row[4], semester=row[5], aisCode=row[6], search_vector=row[7])
 
 
 def get_subject_by_semester(conn: ConnectionLike, *, semester: int) -> QueryResults[models.Subject]:
@@ -191,7 +202,7 @@ def get_subject_by_semester(conn: ConnectionLike, *, semester: int) -> QueryResu
         Helper class of type `QueryResults[models.Subject]` that allows both iteration and normal fetching of data from the db.
     """
     def _decode_hook(row: asyncpg.Record) -> models.Subject:
-        return models.Subject(id=row[0], name=row[1], facultyId=row[2], aisid=row[3], stage=row[4], semester=row[5], aisCode=row[6])
+        return models.Subject(id=row[0], name=row[1], facultyId=row[2], aisid=row[3], stage=row[4], semester=row[5], aisCode=row[6], search_vector=row[7])
     return QueryResults[models.Subject](conn, GET_SUBJECT_BY_SEMESTER, _decode_hook, semester)
 
 
@@ -209,7 +220,7 @@ def get_subject_by_semester_faculty_stage(conn: ConnectionLike, *, semester: int
         Helper class of type `QueryResults[models.Subject]` that allows both iteration and normal fetching of data from the db.
     """
     def _decode_hook(row: asyncpg.Record) -> models.Subject:
-        return models.Subject(id=row[0], name=row[1], facultyId=row[2], aisid=row[3], stage=row[4], semester=row[5], aisCode=row[6])
+        return models.Subject(id=row[0], name=row[1], facultyId=row[2], aisid=row[3], stage=row[4], semester=row[5], aisCode=row[6], search_vector=row[7])
     return QueryResults[models.Subject](conn, GET_SUBJECT_BY_SEMESTER_FACULTY_STAGE, _decode_hook, semester, facultyId, stage)
 
 
@@ -224,7 +235,7 @@ def get_subjects(conn: ConnectionLike) -> QueryResults[models.Subject]:
         Helper class of type `QueryResults[models.Subject]` that allows both iteration and normal fetching of data from the db.
     """
     def _decode_hook(row: asyncpg.Record) -> models.Subject:
-        return models.Subject(id=row[0], name=row[1], facultyId=row[2], aisid=row[3], stage=row[4], semester=row[5], aisCode=row[6])
+        return models.Subject(id=row[0], name=row[1], facultyId=row[2], aisid=row[3], stage=row[4], semester=row[5], aisCode=row[6], search_vector=row[7])
     return QueryResults[models.Subject](conn, GET_SUBJECTS, _decode_hook)
 
 
@@ -240,7 +251,7 @@ def get_subjects_by_faculty(conn: ConnectionLike, *, facultyId: int) -> QueryRes
         Helper class of type `QueryResults[models.Subject]` that allows both iteration and normal fetching of data from the db.
     """
     def _decode_hook(row: asyncpg.Record) -> models.Subject:
-        return models.Subject(id=row[0], name=row[1], facultyId=row[2], aisid=row[3], stage=row[4], semester=row[5], aisCode=row[6])
+        return models.Subject(id=row[0], name=row[1], facultyId=row[2], aisid=row[3], stage=row[4], semester=row[5], aisCode=row[6], search_vector=row[7])
     return QueryResults[models.Subject](conn, GET_SUBJECTS_BY_FACULTY, _decode_hook, facultyId)
 
 
@@ -256,5 +267,21 @@ def get_subjects_by_stage(conn: ConnectionLike, *, stage: int) -> QueryResults[m
         Helper class of type `QueryResults[models.Subject]` that allows both iteration and normal fetching of data from the db.
     """
     def _decode_hook(row: asyncpg.Record) -> models.Subject:
-        return models.Subject(id=row[0], name=row[1], facultyId=row[2], aisid=row[3], stage=row[4], semester=row[5], aisCode=row[6])
+        return models.Subject(id=row[0], name=row[1], facultyId=row[2], aisid=row[3], stage=row[4], semester=row[5], aisCode=row[6], search_vector=row[7])
     return QueryResults[models.Subject](conn, GET_SUBJECTS_BY_STAGE, _decode_hook, stage)
+
+
+def search_subject(conn: ConnectionLike, *, unaccent: str) -> QueryResults[models.Subject]:
+    """Fetch many from the db using the SQL query with `name: searchSubject :many`.
+
+    Args:
+        conn:
+            Connection object of type `ConnectionLike` used to execute the query.
+        unaccent: str.
+
+    Returns:
+        Helper class of type `QueryResults[models.Subject]` that allows both iteration and normal fetching of data from the db.
+    """
+    def _decode_hook(row: asyncpg.Record) -> models.Subject:
+        return models.Subject(id=row[0], name=row[1], facultyId=row[2], aisid=row[3], stage=row[4], semester=row[5], aisCode=row[6], search_vector=row[7])
+    return QueryResults[models.Subject](conn, SEARCH_SUBJECT, _decode_hook, unaccent)

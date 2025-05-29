@@ -139,6 +139,7 @@ class Subject:
         stage: int
         semester: int
         aisCode: str
+        search_vector: typing.Any | None
     """
 
     id: int
@@ -148,6 +149,7 @@ class Subject:
     stage: int
     semester: int
     aisCode: str
+    search_vector: typing.Any | None
 
 
 @dataclasses.dataclass()
