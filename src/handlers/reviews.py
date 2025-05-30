@@ -6,8 +6,10 @@ from aiogram import F, Router
 from aiogram.filters import Command, CommandStart
 from aiogram.types import Message
 
+from commons import Semester
 from handlers.reviews_common import commonLayout
 from sql.reviews import get_review_by_id
+from sql.subjects import get_subjects, search_subject
 
 router: Router = Router()
 logger = logging.getLogger(__name__)
@@ -34,7 +36,29 @@ async def subject_search_handler(message: Message, db: asyncpg.Pool) -> None:
     """
     params = message.text.split(" ")[1:]
     if len(params) >= 1:
-        pass
+        logger.debug(params)
+        search_query = " ".join(params)
+        subjects_payload = []
+        async with db.acquire() as con:
+            async with con.transaction():
+                found_subjects = search_subject(con, search_query=search_query)
+                async for subject in found_subjects:
+                    subjects_payload.append(
+                        tfmt.as_list(
+                            tfmt.Text(subject.name, ": ", tfmt.Bold(subject.aisCode)),
+                            tfmt.Text(
+                                "Semester: ", tfmt.Bold(Semester(subject.semester).name)
+                            ),
+                        )
+                    )
+        if len(subjects_payload) > 0:
+            payload = tfmt.Bold("Found subjects\n") + tfmt.as_numbered_list(
+                *subjects_payload
+            )
+        else:
+            payload = tfmt.Bold("No subjects found!")
+        await message.answer(**payload.as_kwargs())
+        return
     else:
         payload = tfmt.as_list(
             tfmt.Bold(

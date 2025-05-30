@@ -41,7 +41,7 @@ def commonLayout(
                 ),
                 fmt.as_line(
                     "Review subject: ",
-                    fmt.Bold(inputObj.aisCode),
+                    fmt.Bold(inputObj.name + " (" + inputObj.aisCode + ")"),
                     end="",
                 ),
                 fmt.as_line(
