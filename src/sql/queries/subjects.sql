@@ -23,8 +23,8 @@ RETURNING "id";
 
 -- name: searchSubject :many
 WITH search AS (
-    SELECT to_tsquery('slovak', string_agg(lexeme || ':*', ' & ' order by positions)) AS query
-    FROM unnest(to_tsvector('slovak', UNACCENT($1)))
+    SELECT to_tsquery('slovak', string_agg(lexeme || ':*', ' | ' order by positions)) AS query
+    FROM unnest(to_tsvector('slovak', UNACCENT(@search_query::text)))
 )
 SELECT subjects.*
 FROM subjects, search
